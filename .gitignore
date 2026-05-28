@@ -1,0 +1,14 @@
+# Terraform working directory and state (we use S3, not local state)
+.terraform/
+*.tfstate
+*.tfstate.backup
+crash.log
+
+# Generated at pipeline time — contains your API key
+homepage/config/widgets.yaml
+
+# Generated at pipeline time — regenerated from config/provision.yml
+terraform/terraform.tfvars
+
+# macOS
+.DS_Store

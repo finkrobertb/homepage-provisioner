@@ -1,0 +1,72 @@
+name: Provision Homepage
+
+# Runs whenever config/provision.yml is changed on the main branch.
+# This is the only file you need to edit to redeploy with new settings.
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "config/provision.yml"
+
+jobs:
+  provision:
+    runs-on: ubuntu-latest
+
+    env:
+      AWS_ACCESS_KEY_ID:     ${{ secrets.AWS_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+      AWS_REGION:            ${{ secrets.AWS_REGION }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      # Reads config/provision.yml, geocodes the city, and writes:
+      #   homepage/config/{settings,widgets,services}.yaml
+      #   terraform/terraform.tfvars
+      - name: Generate configs
+        run: python scripts/generate_config.py
+
+      # terraform_wrapper: false is required so that `terraform output -raw`
+      # in the summary step returns a plain string instead of wrapped output.
+      - name: Set up Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_wrapper: false
+
+      # Partial backend config — bucket name and region come from GitHub Secrets
+      # so they are not hardcoded in the repository.
+      - name: Terraform Init
+        working-directory: terraform
+        run: |
+          terraform init \
+            -backend-config="bucket=${{ secrets.TF_STATE_BUCKET }}" \
+            -backend-config="region=${{ secrets.TF_STATE_REGION }}" \
+            -backend-config="key=homepage/terraform.tfstate"
+
+      - name: Terraform Plan
+        working-directory: terraform
+        run: terraform plan -var-file=terraform.tfvars
+
+      - name: Terraform Apply
+        working-directory: terraform
+        run: terraform apply -auto-approve -var-file=terraform.tfvars
+
+      # Write a summary to the GitHub Actions job page so you can see
+      # the IP and SSH command without digging through logs.
+      - name: Summary
+        working-directory: terraform
+        run: |
+          IP=$(terraform output -raw public_ip)
+          SSH=$(terraform output -raw ssh_command)
+          echo "### Homepage is live" >> "$GITHUB_STEP_SUMMARY"
+          echo "| | |" >> "$GITHUB_STEP_SUMMARY"
+          echo "|---|---|" >> "$GITHUB_STEP_SUMMARY"
+          echo "| URL | http://$IP |" >> "$GITHUB_STEP_SUMMARY"
+          echo "| SSH | \`$SSH\` |" >> "$GITHUB_STEP_SUMMARY"
