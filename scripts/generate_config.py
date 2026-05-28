@@ -84,10 +84,7 @@ def main():
 
     config = parse_provision_yaml(provision_path)
 
-    required_keys = [
-        "region", "instance_type", "server_name",
-        "openweathermap_api_key", "city", "ssh_key_name",
-    ]
+    required_keys = ["region", "instance_type", "server_name", "city", "ssh_key_name"]
     for key in required_keys:
         if key not in config:
             print(
@@ -96,15 +93,21 @@ def main():
             )
             sys.exit(1)
 
-    if config["openweathermap_api_key"] == "REPLACE_WITH_YOUR_KEY":
+    # API key is never stored in the repo — read it from the environment instead.
+    # Locally: export OWM_API_KEY=your-key
+    # In GitHub Actions: stored as the OWM_API_KEY repository secret
+    api_key = os.environ.get("OWM_API_KEY", "").strip()
+    if not api_key:
         print(
-            "ERROR: Replace the placeholder openweathermap_api_key in config/provision.yml",
+            "ERROR: OWM_API_KEY environment variable is not set.\n"
+            "  Locally:         export OWM_API_KEY=your-key\n"
+            "  GitHub Actions:  add OWM_API_KEY as a repository secret",
             file=sys.stderr,
         )
         sys.exit(1)
 
     print(f"Geocoding '{config['city']}' via OpenWeatherMap...")
-    lat, lon = geocode_city(config["city"], config["openweathermap_api_key"])
+    lat, lon = geocode_city(config["city"], api_key)
     print(f"  lat={lat:.4f}, lon={lon:.4f}")
 
     print("Generating configs...")
@@ -124,7 +127,7 @@ def main():
         f'    longitude: {lon:.4f}\n'
         f'    units: metric\n'
         f'    provider: openweathermap\n'
-        f'    apiKey: "{config["openweathermap_api_key"]}"\n'
+        f'    apiKey: "{api_key}"\n'
         f'    cache: 5\n'
         f'- datetime:\n'
         f'    text_size: xl\n'

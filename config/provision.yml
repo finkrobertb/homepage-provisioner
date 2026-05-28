@@ -1,6 +1,5 @@
 region: us-east-1
 instance_type: t2.micro
 server_name: my-homepage
-openweathermap_api_key: REPLACE_WITH_YOUR_KEY
-city: New York
+city: Mount Pleasant, SC
 ssh_key_name: homepage-key

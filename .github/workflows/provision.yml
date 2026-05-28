@@ -30,7 +30,10 @@ jobs:
       # Reads config/provision.yml, geocodes the city, and writes:
       #   homepage/config/{settings,widgets,services}.yaml
       #   terraform/terraform.tfvars
+      # The API key is passed via secret — it never appears in any file in the repo.
       - name: Generate configs
+        env:
+          OWM_API_KEY: ${{ secrets.OWM_API_KEY }}
         run: python scripts/generate_config.py
 
       # terraform_wrapper: false is required so that `terraform output -raw`
