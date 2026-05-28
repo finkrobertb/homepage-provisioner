@@ -11,6 +11,7 @@ Uses only Python stdlib — no third-party packages required.
 
 import json
 import os
+import re
 import sys
 import urllib.error
 import urllib.parse
@@ -36,35 +37,44 @@ def geocode_city(city, api_key):
     """
     Resolve city name to lat/lon using the OpenWeatherMap Geocoding API.
     This API is included in the free OWM tier.
+
+    Tries the city string as-is first. If OWM returns no results and the
+    city looks like "Name, ST" (US city with two-letter state), automatically
+    retries as "Name,ST,US" which is the format OWM requires for US cities.
     """
-    url = (
-        "https://api.openweathermap.org/geo/1.0/direct"
-        f"?q={urllib.parse.quote(city)}&limit=1&appid={api_key}"
+    queries = [city]
+    if re.search(r",\s*[A-Z]{2}$", city):
+        queries.append(re.sub(r",\s*", ",", city) + ",US")
+
+    for query in queries:
+        url = (
+            "https://api.openweathermap.org/geo/1.0/direct"
+            f"?q={urllib.parse.quote(query)}&limit=1&appid={api_key}"
+        )
+        try:
+            with urllib.request.urlopen(url, timeout=10) as resp:
+                data = json.loads(resp.read().decode())
+        except urllib.error.HTTPError as exc:
+            print(
+                f"ERROR: Geocoding API returned HTTP {exc.code}. "
+                "Check the OWM_API_KEY secret — it may not be activated yet "
+                "(new keys can take up to 2 hours).",
+                file=sys.stderr,
+            )
+            sys.exit(1)
+        except urllib.error.URLError as exc:
+            print(f"ERROR: Could not reach geocoding API: {exc.reason}", file=sys.stderr)
+            sys.exit(1)
+
+        if data:
+            return data[0]["lat"], data[0]["lon"]
+
+    print(
+        f"ERROR: City '{city}' not found by OpenWeatherMap.\n"
+        "Try a more specific format, e.g. 'Mount Pleasant,SC,US' or just 'Charleston'.",
+        file=sys.stderr,
     )
-    try:
-        with urllib.request.urlopen(url, timeout=10) as resp:
-            data = json.loads(resp.read().decode())
-    except urllib.error.HTTPError as exc:
-        print(
-            f"ERROR: Geocoding API returned HTTP {exc.code}. "
-            "Check the OWM_API_KEY secret — it may not be activated yet "
-            "(new keys can take up to 2 hours).",
-            file=sys.stderr,
-        )
-        sys.exit(1)
-    except urllib.error.URLError as exc:
-        print(f"ERROR: Could not reach geocoding API: {exc.reason}", file=sys.stderr)
-        sys.exit(1)
-
-    if not data:
-        print(
-            f"ERROR: City '{city}' not found. "
-            "Check the city value in config/provision.yml.",
-            file=sys.stderr,
-        )
-        sys.exit(1)
-
-    return data[0]["lat"], data[0]["lon"]
+    sys.exit(1)
 
 
 def write_file(path, content):
