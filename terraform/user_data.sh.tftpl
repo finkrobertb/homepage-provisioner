@@ -1,41 +1,20 @@
 #!/bin/bash
-# Runs once on first boot. All output is logged to /var/log/user_data.log.
 set -euo pipefail
 exec > /var/log/user_data.log 2>&1
 
 echo "=== Homepage provisioner starting: $$(date) ==="
 
-# ── Install Docker CE ────────────────────────────────────────────────────────
+# ── Install Docker CE ─────────────────────────────────────────────────────────
+# The get.docker.com convenience script handles all repository setup and works
+# on any supported Linux distribution without manual arch/codename detection.
 apt-get update -y
-apt-get install -y ca-certificates curl gnupg
-
-install -m 0755 -d /etc/apt/keyrings
-curl -fsSL https://download.docker.com/linux/ubuntu/gpg \
-  -o /etc/apt/keyrings/docker.asc
-chmod a+r /etc/apt/keyrings/docker.asc
-
-# Store values in variables first so the echo writes a single-line entry.
-# Multi-line echo commands produce malformed apt sources entries.
-ARCH=$$(dpkg --print-architecture)
-. /etc/os-release
-echo "deb [arch=$$ARCH signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/ubuntu $$VERSION_CODENAME stable" \
-  | tee /etc/apt/sources.list.d/docker.list > /dev/null
-
-apt-get update -y
-apt-get install -y \
-  docker-ce \
-  docker-ce-cli \
-  containerd.io \
-  docker-buildx-plugin \
-  docker-compose-plugin
-
+curl -fsSL https://get.docker.com | sh
 systemctl enable --now docker
 echo "Docker: $$(docker --version)"
 
-# ── Write app files (embedded by Terraform, base64-encoded) ──────────────────
+# ── Write app files (embedded by Terraform, base64-encoded) ───────────────────
 mkdir -p /opt/homepage/config /opt/homepage/nginx
 
-# printf '%s' avoids adding an extra newline before piping to base64 -d
 printf '%s' '${settings_yaml_b64}'  | base64 -d > /opt/homepage/config/settings.yaml
 printf '%s' '${widgets_yaml_b64}'   | base64 -d > /opt/homepage/config/widgets.yaml
 printf '%s' '${services_yaml_b64}'  | base64 -d > /opt/homepage/config/services.yaml
@@ -44,14 +23,13 @@ printf '%s' '${nginx_conf_b64}'     | base64 -d > /opt/homepage/nginx/nginx.conf
 
 echo "Config files written."
 
-# ── Start containers ─────────────────────────────────────────────────────────
+# ── Start containers ──────────────────────────────────────────────────────────
 cd /opt/homepage
 docker compose up -d
 
 echo "Containers started:"
 docker compose ps
 
-# Retrieve the public IP from the EC2 instance metadata service
 INSTANCE_IP=$$(curl -sf http://169.254.169.254/latest/meta-data/public-ipv4 || echo "unknown")
 echo "=== Provisioner complete: $$(date) ==="
 echo "=== Dashboard: http://$$INSTANCE_IP ==="
