@@ -1,5 +1,4 @@
 region: us-east-1
-
 instance_type: t2.micro
 server_name: my-homepage
 city: Mount Pleasant, SC
