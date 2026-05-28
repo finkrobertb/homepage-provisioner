@@ -30,6 +30,4 @@ docker compose up -d
 echo "Containers started:"
 docker compose ps
 
-INSTANCE_IP=$$(curl -sf http://169.254.169.254/latest/meta-data/public-ipv4 || echo "unknown")
 echo "=== Provisioner complete: $$(date) ==="
-echo "=== Dashboard: http://$$INSTANCE_IP ==="
