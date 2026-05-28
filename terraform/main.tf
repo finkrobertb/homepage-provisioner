@@ -79,10 +79,11 @@ resource "aws_security_group" "homepage" {
 }
 
 resource "aws_instance" "homepage" {
-  ami                    = data.aws_ami.ubuntu.id
-  instance_type          = var.instance_type
-  key_name               = var.ssh_key_name
-  vpc_security_group_ids = [aws_security_group.homepage.id]
+  ami                          = data.aws_ami.ubuntu.id
+  instance_type                = var.instance_type
+  key_name                     = var.ssh_key_name
+  vpc_security_group_ids       = [aws_security_group.homepage.id]
+  user_data_replace_on_change  = true
 
   # templatefile() reads the .tftpl script and substitutes the ${...} variables.
   # The config files are base64-encoded so that special characters (quotes,
