@@ -39,7 +39,7 @@ data "aws_ami" "ubuntu" {
 
 resource "aws_security_group" "homepage" {
   name        = "${var.server_name}-sg"
-  description = "Homepage server — allow SSH, HTTP, HTTPS"
+  description = "Homepage server - allow SSH, HTTP, HTTPS"
 
   ingress {
     description = "SSH"
