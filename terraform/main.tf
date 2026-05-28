@@ -89,11 +89,12 @@ resource "aws_instance" "homepage" {
   # The config files are base64-encoded so that special characters (quotes,
   # newlines, $-signs) in the YAML do not break the shell heredoc syntax.
   user_data = templatefile("${path.module}/user_data.sh.tftpl", {
-    settings_yaml_b64  = base64encode(file("${path.root}/../homepage/config/settings.yaml"))
-    widgets_yaml_b64   = base64encode(file("${path.root}/../homepage/config/widgets.yaml"))
-    services_yaml_b64  = base64encode(file("${path.root}/../homepage/config/services.yaml"))
-    docker_compose_b64 = base64encode(file("${path.root}/../homepage/docker-compose.yml"))
-    nginx_conf_b64     = base64encode(file("${path.root}/../homepage/nginx/nginx.conf"))
+    settings_yaml_b64   = base64encode(file("${path.root}/../homepage/config/settings.yaml"))
+    widgets_yaml_b64    = base64encode(file("${path.root}/../homepage/config/widgets.yaml"))
+    services_yaml_b64   = base64encode(file("${path.root}/../homepage/config/services.yaml"))
+    bookmarks_yaml_b64  = base64encode(file("${path.root}/../homepage/config/bookmarks.yaml"))
+    docker_compose_b64  = base64encode(file("${path.root}/../homepage/docker-compose.yml"))
+    nginx_conf_b64      = base64encode(file("${path.root}/../homepage/nginx/nginx.conf"))
   })
 
   tags = {

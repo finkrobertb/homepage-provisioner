@@ -132,13 +132,11 @@ def main():
 
     write_file(
         os.path.join(project_root, "homepage", "config", "widgets.yaml"),
-        f'- weather:\n'
-        f'    label: "{config["city"]}"\n'
+        f'- openmeteo:\n'
+        f'    label: {config["city"]}\n'
         f'    latitude: {lat:.4f}\n'
         f'    longitude: {lon:.4f}\n'
-        f'    units: metric\n'
-        f'    provider: openweathermap\n'
-        f'    apiKey: "{api_key}"\n'
+        f'    units: imperial\n'
         f'    cache: 5\n'
         f'- datetime:\n'
         f'    text_size: xl\n'
@@ -153,8 +151,12 @@ def main():
 
     write_file(
         os.path.join(project_root, "homepage", "config", "services.yaml"),
-        "# Add service cards here. See https://gethomepage.dev/configs/services/\n"
-        "- My Server: []\n",
+        "# Add service cards here. See https://gethomepage.dev/configs/services/\n",
+    )
+
+    write_file(
+        os.path.join(project_root, "homepage", "config", "bookmarks.yaml"),
+        "# Add bookmark groups here. See https://gethomepage.dev/configs/bookmarks/\n",
     )
 
     write_file(
