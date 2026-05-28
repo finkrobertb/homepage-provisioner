@@ -47,7 +47,8 @@ def geocode_city(city, api_key):
     except urllib.error.HTTPError as exc:
         print(
             f"ERROR: Geocoding API returned HTTP {exc.code}. "
-            "Check your openweathermap_api_key in config/provision.yml.",
+            "Check the OWM_API_KEY secret — it may not be activated yet "
+            "(new keys can take up to 2 hours).",
             file=sys.stderr,
         )
         sys.exit(1)
